@@ -58,3 +58,51 @@ func (smartContractPointer *SmartContract) InitLedger(ctx contractapi.Transactio
 
 	return nil
 }
+
+func (s *SmartContract) CreateAsset(
+	ctx contractapi.TransactionContextInterface,
+	id string,
+	color string,
+	size int,
+	owner string,
+	appraisedValue int) error {
+	// Check if the asset already exists on the ledger
+	exists, err := s.AssetExists(ctx, id)
+
+	if err != nil {
+		return err
+	}
+	if exists {
+		return fmt.Errorf("The asset with id %s already exists", id)
+	}
+
+	// Create the new asset
+	asset := Asset{
+		ID:             id,
+		Color:          color,
+		Size:           size,
+		Owner:          owner,
+		AppraisedValue: appraisedValue,
+	}
+
+	// Marshall the asset
+	assetJSON, err := json.Marshal(asset)
+
+	if err != nil {
+		return err
+	}
+
+	return ctx.GetStub().PutState(id, assetJSON)
+}
+
+func (s *SmartContract) AssetExists(ctx contractapi.TransactionContextInterface, id string) (bool, error) {
+	// Try and retrieve the asset with the given id from the ledger
+	assetJSON, err := ctx.GetStub().GetState(id)
+
+	if err != nil {
+		return false, fmt.Errorf("Failed to read world state for asset with id %v", id)
+	}
+
+	// Return the asset (if found) together with no error
+	return assetJSON != nil, nil
+}
