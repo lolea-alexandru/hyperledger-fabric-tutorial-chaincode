@@ -59,6 +59,7 @@ func (smartContractPointer *SmartContract) InitLedger(ctx contractapi.Transactio
 	return nil
 }
 
+// Creates a new asset with the provided details
 func (s *SmartContract) CreateAsset(
 	ctx contractapi.TransactionContextInterface,
 	id string,
@@ -95,6 +96,7 @@ func (s *SmartContract) CreateAsset(
 	return ctx.GetStub().PutState(id, assetJSON)
 }
 
+// Checks if the asset with the given id exists in the ledger
 func (s *SmartContract) AssetExists(ctx contractapi.TransactionContextInterface, id string) (bool, error) {
 	// Try and retrieve the asset with the given id from the ledger
 	assetJSON, err := ctx.GetStub().GetState(id)
