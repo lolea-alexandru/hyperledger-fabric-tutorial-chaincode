@@ -120,6 +120,7 @@ func (s *SmartContract) ReadAsset(ctx contractapi.TransactionContextInterface, i
 	return &asset, nil
 }
 
+// Updates an asset with the given parameters
 func (s *SmartContract) UpdateAsset(
 	ctx contractapi.TransactionContextInterface,
 	id string,
@@ -154,6 +155,25 @@ func (s *SmartContract) UpdateAsset(
 	}
 
 	return ctx.GetStub().PutState(id, updatedAssetJSON)
+}
+
+// Deletes an asset with the given id
+func (s *SmartContract) DeleteAsset(ctx contractapi.TransactionContextInterface, id string) error {
+	// Check if the asset to be deleted is on the ledger or not
+	exists, err := s.AssetExists(ctx, id)
+
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return fmt.Errorf("The asset with id %s does not exist", id)
+	}
+
+	// Delete the asset with the given id
+	return ctx.GetStub().DelState(id)
+
+	// Important note, DelState will record the id on the writestate and will delete the key once the transaction
+	// has been validated and comitted
 }
 
 // Checks if the asset with the given id exists in the ledger
