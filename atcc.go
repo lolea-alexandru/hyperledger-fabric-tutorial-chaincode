@@ -221,7 +221,7 @@ func (s *SmartContract) GetAllAssets(ctx contractapi.TransactionContextInterface
 
 		err = json.Unmarshal(queryResponse.Value, &asset)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		// Apped the pointer to the read asset
@@ -242,4 +242,19 @@ func (s *SmartContract) AssetExists(ctx contractapi.TransactionContextInterface,
 
 	// Return the asset (if found) together with no error
 	return assetJSON != nil, nil
+}
+
+func main() {
+	// Create new chaincode
+	assetChaincode, err := contractapi.NewChaincode(&SmartContract{})
+	if err != nil {
+		log.Panicf("Error creating the chaincode: %v", err)
+	}
+
+	// Start the chaincode
+	err = assetChaincode.Start()
+	if err != nil {
+		log.Panicf("Error starting the chaincode: %v", err)
+	}
+
 }
