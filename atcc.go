@@ -120,6 +120,117 @@ func (s *SmartContract) ReadAsset(ctx contractapi.TransactionContextInterface, i
 	return &asset, nil
 }
 
+// Updates an asset with the given parameters
+func (s *SmartContract) UpdateAsset(
+	ctx contractapi.TransactionContextInterface,
+	id string,
+	color string,
+	size int,
+	owner string,
+	appraisedValue int) error {
+	// Check if the asset exists on the ledger
+	exists, err := s.AssetExists(ctx, id)
+
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return fmt.Errorf("The asset with id %s does not exist", id)
+	}
+
+	// Create the new asset
+	updatedAsset := Asset{
+		ID:             id,
+		Color:          color,
+		Size:           size,
+		Owner:          owner,
+		AppraisedValue: appraisedValue,
+	}
+
+	// Marshall the updated asset
+	updatedAssetJSON, err := json.Marshal(updatedAsset)
+
+	if err != nil {
+		return err
+	}
+
+	return ctx.GetStub().PutState(id, updatedAssetJSON)
+}
+
+// Deletes an asset with the given id
+func (s *SmartContract) DeleteAsset(ctx contractapi.TransactionContextInterface, id string) error {
+	// Check if the asset to be deleted is on the ledger or not
+	exists, err := s.AssetExists(ctx, id)
+
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return fmt.Errorf("The asset with id %s does not exist", id)
+	}
+
+	// Delete the asset with the given id
+	return ctx.GetStub().DelState(id)
+
+	// Important note, DelState will record the id on the writestate and will delete the key once the transaction
+	// has been validated and comitted
+}
+
+func (s *SmartContract) TransferAsset(ctx contractapi.TransactionContextInterface, id string, newOwner string) error {
+	// Read the asset from the ledger
+	transferedAsset, err := s.ReadAsset(ctx, id)
+
+	if err != nil {
+		return err
+	}
+
+	// Change the owner
+	transferedAsset.Owner = newOwner
+
+	// Marshall the updated asset
+	transferedAssetJSON, err := json.Marshal(transferedAsset)
+
+	if err != nil {
+		return err
+	}
+
+	return ctx.GetStub().PutState(id, transferedAssetJSON)
+}
+
+func (s *SmartContract) GetAllAssets(ctx contractapi.TransactionContextInterface) ([]*Asset, error) {
+	// Get an iterator for all the keys
+	resultsIterator, err := ctx.GetStub().GetStateByRange("", "")
+
+	if err != nil {
+		return nil, err
+	}
+	// Close the iterator when done with reading data
+	defer resultsIterator.Close()
+
+	// Go through all the key-value pairs in the ledger
+	var assets []*Asset
+	for resultsIterator.HasNext() {
+		// Get the next KV pair
+		queryResponse, err := resultsIterator.Next()
+		if err != nil {
+			return nil, err
+		}
+
+		// Unmarshall the read asset
+		var asset Asset
+
+		err = json.Unmarshal(queryResponse.Value, &asset)
+		if err != nil {
+			return err
+		}
+
+		// Apped the pointer to the read asset
+		assets = append(assets, &asset)
+	}
+
+	return assets, nil
+}
+
 // Checks if the asset with the given id exists in the ledger
 func (s *SmartContract) AssetExists(ctx contractapi.TransactionContextInterface, id string) (bool, error) {
 	// Try and retrieve the asset with the given id from the ledger
