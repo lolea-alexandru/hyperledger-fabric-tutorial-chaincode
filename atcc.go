@@ -120,6 +120,42 @@ func (s *SmartContract) ReadAsset(ctx contractapi.TransactionContextInterface, i
 	return &asset, nil
 }
 
+func (s *SmartContract) UpdateAsset(
+	ctx contractapi.TransactionContextInterface,
+	id string,
+	color string,
+	size int,
+	owner string,
+	appraisedValue int) error {
+	// Check if the asset exists on the ledger
+	exists, err := s.AssetExists(ctx, id)
+
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return fmt.Errorf("The asset with id %s does not exist", id)
+	}
+
+	// Create the new asset
+	updatedAsset := Asset{
+		ID:             id,
+		Color:          color,
+		Size:           size,
+		Owner:          owner,
+		AppraisedValue: appraisedValue,
+	}
+
+	// Marshall the updated asset
+	updatedAssetJSON, err := json.Marshal(updatedAsset)
+
+	if err != nil {
+		return err
+	}
+
+	return ctx.GetStub().PutState(id, updatedAssetJSON)
+}
+
 // Checks if the asset with the given id exists in the ledger
 func (s *SmartContract) AssetExists(ctx contractapi.TransactionContextInterface, id string) (bool, error) {
 	// Try and retrieve the asset with the given id from the ledger
