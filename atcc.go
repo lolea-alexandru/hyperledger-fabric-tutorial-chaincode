@@ -176,6 +176,27 @@ func (s *SmartContract) DeleteAsset(ctx contractapi.TransactionContextInterface,
 	// has been validated and comitted
 }
 
+func (s *SmartContract) TransferAsset(ctx contractapi.TransactionContextInterface, id string, newOwner string) error {
+	// Read the asset from the ledger
+	transferedAsset, err := s.ReadAsset(ctx, id)
+
+	if err != nil {
+		return err
+	}
+
+	// Change the owner
+	transferedAsset.Owner = newOwner
+
+	// Marshall the updated asset
+	transferedAssetJSON, err := json.Marshal(transferedAsset)
+
+	if err != nil {
+		return err
+	}
+
+	return ctx.GetStub().PutState(id, transferedAssetJSON)
+}
+
 // Checks if the asset with the given id exists in the ledger
 func (s *SmartContract) AssetExists(ctx contractapi.TransactionContextInterface, id string) (bool, error) {
 	// Try and retrieve the asset with the given id from the ledger
