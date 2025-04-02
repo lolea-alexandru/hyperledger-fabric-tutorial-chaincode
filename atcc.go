@@ -197,6 +197,40 @@ func (s *SmartContract) TransferAsset(ctx contractapi.TransactionContextInterfac
 	return ctx.GetStub().PutState(id, transferedAssetJSON)
 }
 
+func (s *SmartContract) GetAllAssets(ctx contractapi.TransactionContextInterface) ([]*Asset, error) {
+	// Get an iterator for all the keys
+	resultsIterator, err := ctx.GetStub().GetStateByRange("", "")
+
+	if err != nil {
+		return nil, err
+	}
+	// Close the iterator when done with reading data
+	defer resultsIterator.Close()
+
+	// Go through all the key-value pairs in the ledger
+	var assets []*Asset
+	for resultsIterator.HasNext() {
+		// Get the next KV pair
+		queryResponse, err := resultsIterator.Next()
+		if err != nil {
+			return nil, err
+		}
+
+		// Unmarshall the read asset
+		var asset Asset
+
+		err = json.Unmarshal(queryResponse.Value, &asset)
+		if err != nil {
+			return err
+		}
+
+		// Apped the pointer to the read asset
+		assets = append(assets, &asset)
+	}
+
+	return assets, nil
+}
+
 // Checks if the asset with the given id exists in the ledger
 func (s *SmartContract) AssetExists(ctx contractapi.TransactionContextInterface, id string) (bool, error) {
 	// Try and retrieve the asset with the given id from the ledger
