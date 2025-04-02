@@ -96,6 +96,30 @@ func (s *SmartContract) CreateAsset(
 	return ctx.GetStub().PutState(id, assetJSON)
 }
 
+// Reads the asset with the given id
+func (s *SmartContract) ReadAsset(ctx contractapi.TransactionContextInterface, id string) (*Asset, error) {
+	// Try and retrieve the asset with the given id from the ledger
+	assetJSON, err := ctx.GetStub().GetState(id)
+
+	if err != nil {
+		return nil, fmt.Errorf("Failed to read world state for asset with id %v", id)
+	}
+
+	if assetJSON == nil {
+		return nil, fmt.Errorf("The asset with id %v does not exist", id)
+	}
+
+	// Unmarshal the found asset
+	var asset Asset
+	err = json.Unmarshal(assetJSON, &asset)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &asset, nil
+}
+
 // Checks if the asset with the given id exists in the ledger
 func (s *SmartContract) AssetExists(ctx contractapi.TransactionContextInterface, id string) (bool, error) {
 	// Try and retrieve the asset with the given id from the ledger
